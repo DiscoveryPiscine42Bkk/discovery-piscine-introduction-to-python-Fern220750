@@ -1,72 +1,90 @@
-def is_in_check(board):
-    n = len(board)  # ขนาดของกระดาน (n x n)
-    king_pos = None
+def checkmate(board):
+    # แปลงกระดานเป็นกริด 2D
+    rows = board.splitlines()
+    n = len(rows)
     
-    # ค้นหาตำแหน่งของราชา
+    # หาตำแหน่งของราชา (King)
+    king_pos = None
     for i in range(n):
         for j in range(n):
-            if board[i][j] == 'K':
+            if rows[i][j] == 'K':
                 king_pos = (i, j)
                 break
         if king_pos:
             break
     
     if not king_pos:
-        print("Error: King not found")
-        return
+        return  # ถ้าไม่พบราชา,ออกจากฟังก์ชัน
     
-    x, y = king_pos
+    king_x, king_y = king_pos
     
-    # ทิศทางที่รูค, ราชินี (แนวนอน, แนวตั้ง) และบิชอป, ราชินี (ทแยงมุม)
-    directions = [
-        (0, 1), (0, -1),  # แนวนอน
-        (1, 0), (-1, 0),  # แนวตั้ง
-        (1, 1), (1, -1),  # ทแยงมุม
-        (-1, 1), (-1, -1) # ทแยงมุมย้อนกลับ
-    ]
+    #  ทิศทางการเคลื่อนที่ของชิ้นหมากแต่ละตัว
+    directions_rook = [(-1, 0), (1, 0), (0, -1), (0, 1)]  #แนวตั้งและแนวนอน
+    directions_bishop = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  #ทแยง
+    directions_queen = directions_rook + directions_bishop  #ราชินีรวมทักษะของป้อมและบิชอป
+    directions_pawn = [(-1, -1), (-1, 1)]  #เบี้ยโจมตีแบบทแยง
+    def is_valid(x, y):
+        return 0 <= x < n and 0 <= y < n
     
-    # ตรวจสอบแต่ละทิศทาง
-    for direction in directions:
-        i, j = x, y
-        while 0 <= i < n and 0 <= j < n:
-            i += direction[0]
-            j += direction[1]
-            
-            if 0 <= i < n and 0 <= j < n:
-                piece = board[i][j]
-                
-                # หากพบหมากรุกศัตรูที่สามารถโจมตีราชา
-                if piece == 'R' or piece == 'Q':  # รูคหรือราชินี (ในแนวนอนหรือแนวตั้ง)
-                    print("Success")
-                    return
-                elif piece == 'B' or piece == 'Q':  # บิชอปหรือราชินี (ในทแยงมุม)
-                    print("Success")
-                    return
-                elif piece == 'P':  # เบี้ยสามารถโจมตีในทแยงมุม
-                    if direction in [(1, 1), (1, -1)] and i > x:  # เบี้ยโจมตีลง
+    # ตรวจสอบว่าชิ้นหมากฝ่ายศัตรูสามารถโจมตีราชาได้หรือไม่
+    for i in range(n):
+        for j in range(n):
+            piece = rows[i][j]
+            if piece == '.':
+                continue  # ข้ามช่องว่างที่ว่างเปล่า
+
+            if piece == 'P':  # ตรวจสอบเบี้ย
+                #เบี้ยสามารถโจมตีได้เฉพาะในทิศทางทแยง ดังนั้นเราต้องตรวจสอบว่าเบี้ยสามารถโจมตีราชาได้หรือไม่
+                for dx, dy in directions_pawn:
+                    if is_valid(i + dx, j + dy) and i + dx == king_x and j + dy == king_y:
                         print("Success")
                         return
-                    elif direction in [(-1, 1), (-1, -1)] and i < x:  # เบี้ยโจมตีขึ้น
-                        print("Success")
-                        return
-                elif piece != '.':
-                    # หากพบหมากรุกตัวอื่น (ที่ไม่ใช่ช่องว่าง) บล็อกการเคลื่อนที่
-                    break
-    
-    # หากไม่มีหมากรุกตัวใดสามารถโจมตีราชาได้
+            elif piece == 'R':  # ตรวจสอบป้อม
+                for dx, dy in directions_rook:
+                    x, y = i, j
+                    while is_valid(x + dx, y + dy):
+                        x, y = x + dx, y + dy
+                        if x == king_x and y == king_y:
+                            print("Success")
+                            return
+                        if rows[x][y] != '.':
+                            break  # หยุดถ้าพบชิ้นหมากอื่น ๆ ขวางทาง
+            elif piece == 'B':  # ตรวจสอบบิชอป
+                for dx, dy in directions_bishop:
+                    x, y = i, j
+                    while is_valid(x + dx, y + dy):
+                        x, y = x + dx, y + dy
+                        if x == king_x and y == king_y:
+                            print("Success")
+                            return
+                        if rows[x][y] != '.':
+                            break  # หยุดถ้าพบชิ้นหมากอื่น ๆ ขวางทาง
+            elif piece == 'Q':  # ตรวจสอบราชินี
+                for dx, dy in directions_queen:
+                    x, y = i, j
+                    while is_valid(x + dx, y + dy):
+                        x, y = x + dx, y + dy
+                        if x == king_x and y == king_y:
+                            print("Success") #ถ้าเกิดการโจมตี
+                            return
+                        if rows[x][y] != '.':
+                            break  # หยุดถ้าพบชิ้นหมากอื่น ๆ ขวางทาง
+    #ถ้าไม่พบการโจมตีใดๆ
     print("Fail")
+    
 
-# ตัวอย่างการทดสอบ
-board = [
-    ['.', 'K', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', 'R', '.', '.', '.', '.'],
-    ['.', '.', 'P', '.', 'P', '.', '.', '.'],
-    ['.', 'P', '.', 'B', '.', 'B', 'P', '.'],
-    ['.', '.', '.', '.', 'B', '.', 'P', '.'],
-    ['.', '.', 'P', '.', 'Q', 'P', '.', '.'],
-    ['.', '.', '.', 'P', 'P', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.']
-]
+def main():
+    board = """\
+..K.....
+...R....
+........
+....Q...
+........
+........
+........
+........\
+"""
+    checkmate(board)
 
-# ทดสอบฟังก์ชัน
-is_in_check(board)
+if __name__ == "__main__":
+    main()
