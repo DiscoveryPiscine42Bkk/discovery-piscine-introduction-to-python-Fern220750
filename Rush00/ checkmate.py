@@ -21,7 +21,7 @@ def checkmate(board_string):
     board = board_string.split()
     king, pawns, bishops, rooks, queens = find_positions(board)
 
-    # Pawn check
+    # ตรวจสอบว่า King (K) ถูกโจมตีโดยเบี้ย (Pawn) หรือไม่
     for r, c in pawns:
         for dr, dc in [(-1, -1), (-1, 1)]:
             if [r + dr, c + dc] == king:
